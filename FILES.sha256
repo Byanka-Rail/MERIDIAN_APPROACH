@@ -1,0 +1,14 @@
+b8f78c00f43aacad682aa5278e4fc17f990ffd5d052b6e5b7a6abdaeac156dc1  ./.github/workflows/build-apk.yml
+0ef9434b5dfc76b905597b5f7fc1e8d2b1f371a863a6bca3d7273c807a984222  ./FILES.sha256
+d2f30b8fbd96ab7ce63fc2ebe8509ec6857cb3c10a925737863fdb76efe500f3  ./README.md
+7b77c1855f4d8e637aa1e48ff931e47a4f566b9d6209cb4135df45d629bd0729  ./app/build.gradle
+e96092fea0cdf8f7f252f15a4c7ea11301865e1335e142bc3c37d588057fff61  ./app/proguard-rules.pro
+92f32a5621efbf7c62394ea65cc200141ce0ad977bcb0cd22a426c9f01234635  ./app/src/main/AndroidManifest.xml
+392e3b9d41ba3b8ae994b75d1dcafc9274b8fdda585d95a2daa1812741016388  ./app/src/main/assets/MERIDIAN_APPROACH.html
+f36076a3c789cdd92353dc630758e8605bada8f53e1393ea81f7029f683e1faa  ./app/src/main/java/com/meridian/approach/MainActivity.java
+5aae364ca8947d9c90e077c034263c0a80bc433934edc6fba8f7d66931e0592a  ./app/src/main/res/drawable/ic_launcher.xml
+3c3beb9988a66d2761333ab35d2afc74b579493aaf729f1c8dc106a93b02e971  ./app/src/main/res/values/strings.xml
+e45490da4b1041a9f32a44bbc8c8f21d16d9bc4d300797ed42cbd3fa6d63edbb  ./app/src/main/res/values/themes.xml
+c3c0cf04da0fc239f391c774554d97d890018ab6e37e87cc62f6070d0c8c9909  ./build.gradle
+46f9b898e4a170f24c4b0492968696ff335bdc5e660892b0e29c6594bb4da448  ./gradle.properties
+b2c367451ca4f348134a08d101a8b9916c8ec2d6dd0e51ec01bd0afe6ffea373  ./settings.gradle

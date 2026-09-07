@@ -1,0 +1,24 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.meridian.approach'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.meridian.approach'
+        minSdk 26
+        targetSdk 35
+        versionCode 2978
+        versionName '0.29.78'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
