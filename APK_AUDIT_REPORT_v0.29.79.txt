@@ -1,0 +1,44 @@
+MERIDIAN APPROACH v0.29.79 · APK 전수조사 / 수정 보고
+=========================================================
+기준: v0.29.78 PC UI + Android WebView shell
+
+[확정 원인 1] 화면 맨 위의 "\\n \\n\\n" 문자
+- HTML <head> 내부에 실제 줄바꿈이 아니라 문자 그대로의 "\\n"이 3곳 남아 있었다.
+- HTML5 파서는 비공백 텍스트를 만나면 head 파싱을 조기에 끝낼 수 있어, 이후 style/script가 body 쪽으로 재배치될 수 있다.
+- WebView에서 이 문자가 실제 화면 텍스트로 노출될 수 있었다.
+- 수정: head 내부 literal \\n 3곳 제거. lxml/html.parser 양쪽에서 body 직접 텍스트 0건 확인.
+
+[확정 원인 2] AUTOFLIGHT 토글을 닫아도 즉시 다시 열림
+- 접기 버튼 자체는 정상이다.
+- autoDeck273()가 비행 중 12 NM 이내 + GEAR/FLAP 미완료이면 매 simulation step마다 강제로 setDeck273(true)를 호출했다.
+- 캡처 화면은 0.8 NM / FLAP 2 / GEAR UP이므로 정확히 이 조건에 해당한다.
+- 수정: 사용자가 직접 닫은 경우 일반 착륙 형상 알림은 강제 재오픈하지 않음.
+- 단, GO AROUND / 엔진 고장 / PITOT 이상 같은 긴급 조건은 안전상 다시 열 수 있음.
+
+[확정 위험 3] Android 15 / targetSdk 35 edge-to-edge
+- 프로젝트 targetSdk=35. Android 15 이상에서 edge-to-edge가 기본 적용된다.
+- 기존 shell은 legacy SYSTEM_UI_FLAG만 사용하고 decorFits/cutout 정책을 명시하지 않았다.
+- WebView가 CSS safe-area-inset-*를 전달하므로 OEM/WebView 조합에 따라 상단 UI가 과도하게 밀릴 여지가 있다.
+- 수정: setDecorFitsSystemWindows(false), cutout ALWAYS, 최신 WindowInsetsController immersive 처리.
+- HTML에도 APK UA 전용 safe-area 상한 fallback을 추가하여 비정상적으로 큰 inset이 들어와도 상단이 수백 px 밀리지 않게 함.
+
+[안정성 보강]
+- WebView textZoom=100% 고정: 시스템/웹뷰 글자 확대가 칵핏 geometry를 깨뜨리는 위험 감소.
+- overscroll/scrollbar 제거: fullscreen cockpit에서 탄성/스크롤 여백 노출 방지.
+- Renderer process 종료 감지 후 Activity 재생성.
+- JS console -> Logcat 기록 추가. 향후 APK에서만 발생하는 JS 오류 추적 가능.
+- UA에 MeridianApproachAPK/0.29.79 추가하여 APK 전용 CSS/진단을 명확히 분리.
+
+[검증]
+- 수정 HTML 내 literal "\\n<style" = 0
+- 수정 HTML 내 literal "</style>\\n" = 0
+- HTML parser / lxml: head styles 83, head scripts 5, body styles 5, body scripts 15로 동일
+- body 직접 렌더 텍스트 노드 = 0
+- 인라인 JavaScript 20개 node --check: 오류 0
+- APK assets HTML과 배포 HTML SHA-256 동일 확인 예정/FILES.sha256에 기록
+
+[남은 비-APK 구조 리스크]
+- 단일 HTML 약 10 MB + 대형 base64 지도/텍스처이므로 초기 파싱/메모리 사용량이 큼.
+- WebView renderer가 OS 메모리 압박으로 죽으면 현재는 재시작되며 비행 상태는 복원되지 않는다.
+- Android 뒤로가기 버튼은 현재 웹 history 기준이며, 게임 내부 오버레이를 자동으로 닫는 별도 브리지까지는 넣지 않았다.
+  (게임 동작을 바꾸는 범위라 이번 APK 회귀 수정에서는 보류.)

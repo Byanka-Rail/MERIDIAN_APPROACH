@@ -1,4 +1,4 @@
-# MERIDIAN APPROACH v0.29.78 Android wrapper
+# MERIDIAN APPROACH v0.29.79 Android wrapper
 
 This project packages the current single-file MERIDIAN APPROACH HTML as an offline Android WebView app.
 
@@ -18,8 +18,8 @@ This project packages the current single-file MERIDIAN APPROACH HTML as an offli
 2. Upload the **contents** of this project folder to the repository root.
 3. Open **Actions** → **Build MERIDIAN APPROACH APK**.
 4. Run the workflow, or push to `main`/`master`.
-5. Download the artifact named `MERIDIAN_APPROACH_v0.29.78_ANDROID`.
-6. Install `MERIDIAN_APPROACH_v0.29.78_DEBUG.apk` on Android.
+5. Download the artifact named `MERIDIAN_APPROACH_v0.29.79_ANDROID`.
+6. Install `MERIDIAN_APPROACH_v0.29.79_DEBUG.apk` on Android.
 
 The debug APK is automatically signed with the standard debug signing key and is directly installable for testing.
 
@@ -41,3 +41,11 @@ Replace:
     app/src/main/assets/MERIDIAN_APPROACH.html
 
 with the newer HTML, then update `versionCode` and `versionName` in `app/build.gradle` and rebuild. The Android wrapper itself does not need to be rewritten.
+
+
+## v0.29.79 APK audit fixes
+- Removed three literal `\n` tokens that could be parsed as visible body text in WebView.
+- Android 15 / targetSdk 35 edge-to-edge and display-cutout handling made explicit.
+- WebView text zoom fixed at 100% and overscroll disabled for stable cockpit geometry.
+- AUTOFLIGHT manual collapse now remains closed during normal landing-configuration prompts; urgent go-around/failure logic may still reopen it.
+- Added WebView console logging to Logcat and render-process recovery diagnostics.
