@@ -37,12 +37,12 @@ jobs:
       - name: Prepare artifact
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk dist/MERIDIAN_APPROACH_v0.29.78_DEBUG.apk
-          sha256sum dist/MERIDIAN_APPROACH_v0.29.78_DEBUG.apk > dist/MERIDIAN_APPROACH_v0.29.78_DEBUG.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk dist/MERIDIAN_APPROACH_v0.29.79_DEBUG.apk
+          sha256sum dist/MERIDIAN_APPROACH_v0.29.79_DEBUG.apk > dist/MERIDIAN_APPROACH_v0.29.79_DEBUG.sha256
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MERIDIAN_APPROACH_v0.29.78_ANDROID
+          name: MERIDIAN_APPROACH_v0.29.79_ANDROID
           path: dist/*
           if-no-files-found: error
