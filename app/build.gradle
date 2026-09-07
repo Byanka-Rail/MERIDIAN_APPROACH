@@ -10,8 +10,8 @@ android {
         applicationId 'com.meridian.approach'
         minSdk 26
         targetSdk 35
-        versionCode 2979
-        versionName '0.29.79'
+        versionCode 2980
+        versionName '0.29.80'
     }
 
     buildTypes {

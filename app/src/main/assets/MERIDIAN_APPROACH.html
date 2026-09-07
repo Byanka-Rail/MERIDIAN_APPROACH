@@ -3,22 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
-<title>MERIDIAN APPROACH v0.29.79 · APK AUDIT FIX</title>
-<script id="apkWebView079Early">
-/* v0.29.79 · Android APK marker. Runs before layout so APK-only guards do not flash. */
-try{if(/MeridianApproachAPK\//.test(navigator.userAgent))document.documentElement.classList.add('apkWebView079')}catch(_){}
-</script>
-<style id="apkWebView079Style">
-/* Android 15/WebView can forward system/cutout insets through safe-area variables.
-   The native shell lays out edge-to-edge; these caps are a fallback against OEM/WebView outliers. */
-html.apkWebView079 #topbar{top:max(5px,min(env(safe-area-inset-top),34px))!important}
-html.apkWebView079 #missionStrip,html.apkWebView079 #wxBadge{top:max(42px,min(calc(env(safe-area-inset-top) + 37px),71px))!important}
-html.apkWebView079 #arrivalStrip070{top:max(62px,min(calc(env(safe-area-inset-top) + 57px),91px))!important}
-html.apkWebView079 .opsHud060,html.apkWebView079 #failureFlag060{top:max(83px,min(calc(env(safe-area-inset-top) + 78px),112px))!important}
-html.apkWebView079 #fuelAlert213{top:max(64px,min(calc(env(safe-area-inset-top) + 58px),94px))!important}
-html.apkWebView079 #landingGuide212{top:max(82px,min(calc(env(safe-area-inset-top) + 76px),110px))!important}
-html.apkWebView079 body{overscroll-behavior:none}
-</style>
+<title>MERIDIAN APPROACH v0.29.78 · PC UI</title>
 <style>
 :root{
  --ink:#eef7ff;--sub:#96adbf;--line:rgba(182,218,243,.20);--panel:#071722;--panel2:#0a1d2a;
@@ -3425,7 +3410,7 @@ body.pg340_2 #tapBtns298{display:none!important}
    <div class="procMapHead099"><b>PROCEDURE MAP</b><span id="procMapMode099">CIRCUIT</span><button id="procMapToggle099" type="button">MIN</button></div>
    <canvas id="procMapCanvas099"></canvas><div id="procMapInfo099">MAP READY</div>
   </div>
-  <div id="topbar"><div id="brand"><b class="brandShort">MA</b><span class="brandFull">MERIDIAN APPROACH · v0.29.79</span></div><div id="topActions"><button id="efbBtn">EFB</button><button id="mcduBtn087">MCDU</button><button id="comBtn">COM · APP</button><button id="opsBtn">OPS</button><button id="timeBtn070" title="시간 배속">TIME 1×</button><button id="moreBtn" aria-label="추가 메뉴">⋯</button></div></div>
+  <div id="topbar"><div id="brand"><b class="brandShort">MA</b><span class="brandFull">MERIDIAN APPROACH · v0.29.80</span></div><div id="topActions"><button id="efbBtn">EFB</button><button id="mcduBtn087">MCDU</button><button id="comBtn">COM · APP</button><button id="opsBtn">OPS</button><button id="timeBtn070" title="시간 배속">TIME 1×</button><button id="moreBtn" aria-label="추가 메뉴">⋯</button></div></div>
   <div id="morePanel"><div class="moreHead102"><div><b>FLIGHT MENU</b><span>보조 기능</span></div><button id="moreClose102" type="button">닫기</button></div><div class="moreGrid102"><button id="logBtn">ATC LOG</button><button id="ecamBtn086">ECAM</button><button id="systemsBtn">SYSTEMS / MANUAL</button><button id="soundBtn">SOUND · ON</button><button id="controlTestBtn091">CONTROL CHECK</button><button id="moreAirportBtn">AIRPORT SELECT</button><button id="moreResetBtn">RESET FLIGHT</button><button id="moreHelpBtn">ACADEMY</button></div><button id="resetBtn" class="legacyTop102">RESET</button><button id="helpBtn" class="legacyTop102">?</button></div>
   <div id="timeNote070">TIME → 1×</div><div id="arrivalStrip070"></div><div id="missionStrip">
    <span class="mStep now" data-stage="INTERCEPT"><i></i>LOC</span><span class="mSep"></span>
@@ -15770,7 +15755,7 @@ addEventListener('DOMContentLoaded',fixTopbar273,{once:true});
 if(document.readyState!=='loading')fixTopbar273();
 
 /* ---------- 2) 하단 조작부 접기 ---------- */
-const DECK273={open:false, built:false, userCollapsed:false};
+const DECK273={open:false, built:false, userClosed:false};
 function buildDeck273(){
   if(DECK273.built)return true;
   const inst=$('instruments'); if(!inst)return false;
@@ -15789,13 +15774,7 @@ function buildDeck273(){
   tab.id='deckTab273'; tab.type='button';
   tab.innerHTML='<b>AUTOFLIGHT</b><span id="deckSum273"></span><i>▲</i>';
   wrap.parentNode.insertBefore(tab,wrap);
-  tab.onclick=()=>{
-    AUDIO.button?.();
-    const next=!DECK273.open;
-    /* A deliberate collapse must stay collapsed. Critical failures may still reopen it. */
-    DECK273.userCollapsed=!next;
-    setDeck273(next);
-  };
+  tab.onclick=()=>{ AUDIO.button?.(); const next=!DECK273.open; DECK273.userClosed=!next; setDeck273(next) };
 
   DECK273.built=true;
   setDeck273(false);
@@ -15803,7 +15782,6 @@ function buildDeck273(){
 }
 function setDeck273(on){
   DECK273.open=on;
-  if(on)DECK273.userCollapsed=false;
   document.body.classList.toggle('deckOpen273',on);
   const t=$('deckTab273');
   if(t)t.querySelector('i').textContent=on?'▼':'▲';
@@ -15825,16 +15803,15 @@ drawAll=function(){ _drawAll273(); try{ syncDeckSum273() }catch(_){} };
 
 /* 중요한 순간에는 자동으로 펼친다 */
 function autoDeck273(){
+  if(!sim.running||sim.finished)DECK273.userClosed=false;
   if(!DECK273.built||DECK273.open)return;
-  const flight=sim.running&&!sim.finished&&!ac.onGround;
-  if(!flight)return;
-  const urgent = sim.goAround||
-    (typeof ENG242!=='undefined'&&ENG242.failed)||
-    (typeof PITOT240!=='undefined'&&PITOT240.mode!=='OK');
-  const configNeed = ac.distNm<12&&(!sim.gear||sim.flap<3);
-  /* Normal configuration advice never fights the user's toggle.
-     Urgent failure/go-around cues can still reopen the panel. */
-  if(urgent || (configNeed&&!DECK273.userCollapsed)) setDeck273(true);
+  const emergency = sim.running&&!sim.finished&&!ac.onGround&&
+    (sim.goAround||
+     (typeof ENG242!=='undefined'&&ENG242.failed)||
+     (typeof PITOT240!=='undefined'&&PITOT240.mode!=='OK'));
+  const configReminder = sim.running&&!sim.finished&&!ac.onGround&&
+    ac.distNm<12&&(!sim.gear||sim.flap<3);
+  if(emergency || (configReminder&&!DECK273.userClosed))setDeck273(true);
 }
 const _step273=step;
 step=function(dt){ _step273(dt); try{ autoDeck273() }catch(_){} };
@@ -32527,7 +32504,7 @@ addEventListener('DOMContentLoaded',()=>{
    document.querySelectorAll('[data-op060]').forEach(b=>mo.observe(b,{attributes:true,attributeFilter:['class']}));
    document.querySelectorAll('[data-op060]').forEach(b=>b.addEventListener('click',()=>setTimeout(fixAdvancedLabel,5)));
    window.addEventListener('meridian-preflight338',syncIncident);
-   const brand=document.querySelector('#brand .brandFull');if(brand)brand.textContent='MERIDIAN APPROACH · v0.29.79';
+   const brand=document.querySelector('#brand .brandFull');if(brand)brand.textContent='MERIDIAN APPROACH · v0.29.80';
    return true;
  }
  let tries=0;const boot=()=>{if(build338())return;if(++tries<30)setTimeout(boot,180)};
