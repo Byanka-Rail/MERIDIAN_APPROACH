@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
-<title>MERIDIAN APPROACH v0.29.78 · PC UI</title>
+<title>MERIDIAN APPROACH v0.29.84 · PC UI</title>
 <style>
 :root{
  --ink:#eef7ff;--sub:#96adbf;--line:rgba(182,218,243,.20);--panel:#071722;--panel2:#0a1d2a;
@@ -2415,7 +2415,7 @@ body:not(.focus218) #dualTouchCue210{ bottom:64px!important; }
 
 <style id="assist234Style">
 #assistCard234{
- position:absolute; z-index:28; left:50%; transform:translateX(-50%);
+ position:absolute; z-index:36; left:50%; transform:translateX(-50%);
  bottom:max(84px,calc(env(safe-area-inset-bottom) + 80px));
  display:none; width:min(520px,86vw); padding:8px 11px;
  border:1px solid rgba(126,218,255,.34); border-radius:12px;
@@ -3410,7 +3410,7 @@ body.pg340_2 #tapBtns298{display:none!important}
    <div class="procMapHead099"><b>PROCEDURE MAP</b><span id="procMapMode099">CIRCUIT</span><button id="procMapToggle099" type="button">MIN</button></div>
    <canvas id="procMapCanvas099"></canvas><div id="procMapInfo099">MAP READY</div>
   </div>
-  <div id="topbar"><div id="brand"><b class="brandShort">MA</b><span class="brandFull">MERIDIAN APPROACH · v0.29.80</span></div><div id="topActions"><button id="efbBtn">EFB</button><button id="mcduBtn087">MCDU</button><button id="comBtn">COM · APP</button><button id="opsBtn">OPS</button><button id="timeBtn070" title="시간 배속">TIME 1×</button><button id="moreBtn" aria-label="추가 메뉴">⋯</button></div></div>
+  <div id="topbar"><div id="brand"><b class="brandShort">MA</b><span class="brandFull">MERIDIAN APPROACH · v0.29.84</span></div><div id="topActions"><button id="efbBtn">EFB</button><button id="mcduBtn087">MCDU</button><button id="comBtn">COM · APP</button><button id="opsBtn">OPS</button><button id="timeBtn070" title="시간 배속">TIME 1×</button><button id="moreBtn" aria-label="추가 메뉴">⋯</button></div></div>
   <div id="morePanel"><div class="moreHead102"><div><b>FLIGHT MENU</b><span>보조 기능</span></div><button id="moreClose102" type="button">닫기</button></div><div class="moreGrid102"><button id="logBtn">ATC LOG</button><button id="ecamBtn086">ECAM</button><button id="systemsBtn">SYSTEMS / MANUAL</button><button id="soundBtn">SOUND · ON</button><button id="controlTestBtn091">CONTROL CHECK</button><button id="moreAirportBtn">AIRPORT SELECT</button><button id="moreResetBtn">RESET FLIGHT</button><button id="moreHelpBtn">ACADEMY</button></div><button id="resetBtn" class="legacyTop102">RESET</button><button id="helpBtn" class="legacyTop102">?</button></div>
   <div id="timeNote070">TIME → 1×</div><div id="arrivalStrip070"></div><div id="missionStrip">
    <span class="mStep now" data-stage="INTERCEPT"><i></i>LOC</span><span class="mSep"></span>
@@ -5341,9 +5341,14 @@ window.__MERIDIAN_TERRAIN_GUARD_072__=()=>{const rows=window.__MERIDIAN_TERRAIN_
   if(src.schema&&String(src.schema).startsWith('MA-NAVDATA')&&!src.runway)throw new Error('NAVDATA export alone is not a world package. Use the airport-package template.');
   const T=airportTemplate110(),A=deepMerge150(T,src);A.id=String(A.id||'').trim().toUpperCase();A.name=String(A.name||A.id||'NEW AIRPORT').replace(/[<>]/g,'').trim();
   if(!/^[A-Z0-9]{3,8}$/.test(A.id))throw new Error('airport.id must be 3–8 letters/numbers');
-  if(['MRDN','MRCP','MRVL'].includes(A.id))throw new Error('built-in airport IDs cannot be overwritten');
+  if(AIRPORTS[A.id]&&!IMPORT150.ids.has(A.id))throw new Error('built-in airport ID '+A.id+' cannot be overwritten');
   if(!A.runway?.id||!Number.isFinite(Number(A.runway.courseDeg)))throw new Error('runway.id / runway.courseDeg required');
   A.runway.courseDeg=wrapDeg(Number(A.runway.courseDeg));A.runway.ils=A.runway.ils||{};A.runway.ils.courseDeg=Number.isFinite(Number(A.runway.ils.courseDeg))?wrapDeg(Number(A.runway.ils.courseDeg)):A.runway.courseDeg;
+  {const R=A.runway,num381=(v,lo,hi,name)=>{const n=Number(v);if(!Number.isFinite(n)||n<lo||n>hi)throw new Error(name+' must be a number between '+lo+' and '+hi);return n};
+   R.lengthM=num381(R.lengthM??3000,600,6000,'runway.lengthM');R.widthM=num381(R.widthM??45,15,120,'runway.widthM');R.glideDeg=num381(R.glideDeg??3,2,4.5,'runway.glideDeg');
+   if(R.ils&&R.ils.glideDeg!=null)R.ils.glideDeg=num381(R.ils.glideDeg,2,4.5,'runway.ils.glideDeg');
+   if(A.elevationFt!=null&&A.elevationFt!=='')A.elevationFt=num381(A.elevationFt,-1500,15000,'elevationFt');
+   if(A.elevationM!=null&&A.elevationM!=='')A.elevationM=num381(A.elevationM,-460,4600,'elevationM');}
   A.elevationFt=Number(A.elevationFt)||Math.round((Number(A.elevationM)||0)/FT);A.elevationM=Number(A.elevationM)||A.elevationFt*FT;
   A.blurb=String(A.blurb||'Imported MA-NAVDATA airport package').replace(/[<>]/g,'');A.terrain=(A.terrain||'PLAINS').toUpperCase();A.layout=(A.layout||'HUB').toUpperCase();
   return A;
@@ -5887,7 +5892,7 @@ window.__MERIDIAN_TERRAIN_GUARD_072__=()=>{const rows=window.__MERIDIAN_TERRAIN_
  function updateNav(){
   const l=worldToLocal(ac.x,ac.z),along=-l.along,cross=l.cross;ac.rwCross=cross;ac.rwAlong=l.along;ac.distNm=Math.sqrt(along*along+cross*cross)/NM;
   const locAngle=Math.atan2(cross,Math.max(150,along))*RAD;ac.locDeg=locAngle;ac.locDots=clamp(locAngle/airport.runway.locFullScaleDeg*2,-2.5,2.5);
-  const fieldAgl=Math.max(0,ac.alt-airport.elevationM),elevAngle=Math.atan2(fieldAgl,Math.max(150,along))*RAD;ac.gsDeg=elevAngle-airport.runway.glideDeg;ac.gsDots=clamp(ac.gsDeg/airport.runway.gsFullScaleDeg*2,-2.5,2.5);ac.baroFt=ac.alt/FT;ac.aglFt=fieldAgl/FT;ac.raFt=Math.max(0,(ac.alt-terrainHeightAt(ac.x,ac.z))/FT);
+  const fieldAgl=Math.max(0,ac.alt-airport.elevationM),gpOff381=gsGroundOffset381(),elevAngle=Math.atan2(fieldAgl,Math.max(150,along+gpOff381))*RAD;ac.gsDeg=elevAngle-airport.runway.glideDeg;ac.gsDots=clamp(ac.gsDeg/airport.runway.gsFullScaleDeg*2,-2.5,2.5);ac.baroFt=ac.alt/FT;ac.aglFt=fieldAgl/FT;ac.raFt=Math.max(0,(ac.alt-terrainHeightAt(ac.x,ac.z))/FT);
  }
  function configDrag(){return flaps[sim.flap].cd+(sim.gear?.028:0)+(sim.spoiler?.11:0)}
  function apMaster083(){return !!(sim.ap1||sim.ap2)}
@@ -5900,7 +5905,7 @@ window.__MERIDIAN_TERRAIN_GUARD_072__=()=>{const rows=window.__MERIDIAN_TERRAIN_
  // Airbus-style altitude window remains the pilot-selected ATC altitude. PUSH/PULL changes the vertical guidance law, not the clearance itself.
  function managedAlt083(){return managedVerticalTarget089()}
  function targetAlt083(){return sim.altManaged?managedAlt083():sim.selAlt}
- const LAND085={flareRaFt:50,landArmRaFt:420,retardRaFt:18,dualApMinRaFt:0};
+ const LAND085={flareRaFt:40,landArmRaFt:420,retardRaFt:18,dualApMinRaFt:0,flareGain:.8,flareVs0:-400,flareVs1:-220};
  function landingDual085(){return !!(sim.ap1&&sim.ap2&&sim.app&&sim.latMode==='LOC'&&sim.vertMode==='GS'&&OPS.failure!=='AP'&&OPS.failure!=='GS'&&OPS.failure!=='RA')}
  function landingCapability085(){if(OPS.failure==='GS'||!sim.app||sim.latMode!=='LOC')return '';if(landingDual085())return 'CAT 3 DUAL';if(apMaster083())return 'CAT 1';return 'MANUAL'}
  function landingAnnun085(){if(sim.landMode==='ROLLOUT')return 'ROLLOUT';if(sim.landMode==='FLARE')return 'FLARE';if(sim.landMode==='LAND')return 'LAND';return landingCapability085()}
@@ -6021,7 +6026,7 @@ window.__MERIDIAN_TERRAIN_GUARD_072__=()=>{const rows=window.__MERIDIAN_TERRAIN_
    else bankCmd=clamp(angleErr(sim.selHdg,ac.flightHeading||ac.heading)*.58,-25,25);
    let desiredVs=0;
    if(sim.vertMode==='GS'){
-    if(landingDual085()&&sim.landMode==='FLARE'){const k=clamp((LAND085.flareRaFt-ac.raFt)/Math.max(1,LAND085.flareRaFt-5),0,1);desiredVs=lerp(-180,-75,k)}
+    if(landingDual085()&&sim.landMode==='FLARE'){const k=clamp((LAND085.flareRaFt-ac.raFt)/Math.max(1,LAND085.flareRaFt-5),0,1);desiredVs=lerp(LAND085.flareVs0||-180,LAND085.flareVs1||-75,k)}
     else {const base=-Math.max(120,ac.gs)*5.31;desiredVs=clamp(base-ac.gsDeg*1020,-1550,-320)};
    }else if(sim.vertMode==='ALT'){
     const altFt=ac.alt/FT,tAlt=targetAlt083();desiredVs=clamp((tAlt-altFt)*1.45,-1600,1600);
@@ -6029,7 +6034,7 @@ window.__MERIDIAN_TERRAIN_GUARD_072__=()=>{const rows=window.__MERIDIAN_TERRAIN_
    const gammaTarget=Math.asin(clamp((desiredVs*FT/60)/Math.max(38,ac.tas),-.20,.20))*RAD;
    const gammaErr=gammaTarget-gammaOfVec(ac.airVel||dirFromAngles(ac.heading,ac.gamma));
    const load=1/Math.max(.72,Math.cos(bankCmd*DEG));
-   alphaCmd=clamp(trimAlphaForLoad(load)+gammaErr*.43,-3.5,flaps[sim.flap].alphaPeak+1.0);
+   alphaCmd=clamp(trimAlphaForLoad(load)+gammaErr*(sim.landMode==='FLARE'?(LAND085.flareGain||.43):.43),-3.5,flaps[sim.flap].alphaPeak+1.0);
    rudderCmd=clamp(-ac.beta*.060-ac.yawRate*.42,-.32,.32);
   }else{
    const m=manualLaw084(dt);bankCmd=m.bank;alphaCmd=m.alpha;rudderCmd=m.rudder;
@@ -6377,7 +6382,7 @@ window.__MERIDIAN_TERRAIN_GUARD_072__=()=>{const rows=window.__MERIDIAN_TERRAIN_
  $('airportBuilderBtn160').onclick=openBuilder160;$('airportImportBtn150').onclick=()=>$('airportImportFile150').click();$('airportImportFile150').onchange=e=>importFile150(e.target.files?.[0]);$('airportTemplateBtn150').onclick=downloadTemplate150;$('airportClearBtn150').onclick=clearImported150;
  $('builderClose160').onclick=()=>$('airportBuilder160').classList.remove('show');$('builderBlank160').onclick=()=>setBuilderFields160(airportTemplate110());$('builderClone160').onclick=cloneCurrentBuilder160;$('builderSave160').onclick=downloadBuilder160;$('builderCopy160').onclick=copyBuilder160;$('builderRegister160').onclick=registerBuilder160;document.querySelectorAll('#airportBuilder160 input,#airportBuilder160 select').forEach(e=>{e.addEventListener('input',updateBuilderPreview160);e.addEventListener('change',updateBuilderPreview160)});updateBuilderPreview160();
 
- document.querySelectorAll('[data-op060]').forEach(b=>b.onclick=()=>setOperation060(b.dataset.op060));document.querySelectorAll('[data-start180]').forEach(b=>b.onclick=()=>{selectStartLocation180(b.dataset.start180,true);updateBriefing()});document.querySelectorAll('[data-hentry200]').forEach(b=>b.onclick=()=>{setHoldEntryMethod200(b.dataset.hentry200,true);updateBriefing()});syncCircuitAvailability190();
+ document.querySelectorAll('[data-op060]').forEach(b=>b.onclick=()=>{STARTLOC180.opChosen=true;setOperation060(b.dataset.op060)});document.querySelectorAll('[data-start180]').forEach(b=>b.onclick=()=>{selectStartLocation180(b.dataset.start180,true);updateBriefing()});document.querySelectorAll('[data-hentry200]').forEach(b=>b.onclick=()=>{setHoldEntryMethod200(b.dataset.hentry200,true);updateBriefing()});syncCircuitAvailability190();
  document.querySelectorAll('[data-fail060]').forEach(b=>b.onclick=()=>{if(sim.running)return;OPS.failureChoice=b.dataset.fail060;document.querySelectorAll('[data-fail060]').forEach(x=>x.classList.toggle('on',x===b))});
  $('timeBtn070').onclick=cycleTime070;$('opsBtn').onclick=()=>{const open=!$('opsPanel').classList.contains('show');closeAuxPanels('ops');$('opsPanel').classList.toggle('show',open);updateOpsPanel060()};$('opsClose060').onclick=()=>$('opsPanel').classList.remove('show');$('opsHoldExit060').onclick=leaveHold060;$('opsAck060').onclick=()=>{OPS.failureAck=true;$('opsBtn').classList.remove('alert');$('failureFlag060').classList.remove('show');if(ECAM086.active)ecamAck086(true)};$('opsManualIls060').onclick=toggleIls060;
  $('ecamBtn086').onclick=()=>{const open=!$('ecamPanel086').classList.contains('show');closeAuxPanels('ecam');$('ecamPanel086').classList.toggle('show',open);if(open&&ECAM086.active)ecamAck086(false);renderEcam086(true)};$('masterAlert086').onclick=()=>ecamAck086(true);$('ecamClose086').onclick=()=>$('ecamPanel086').classList.remove('show');$('mcduBtn087').onclick=()=>{const open=!$('mcduPanel087').classList.contains('show');closeAuxPanels('mcdu');$('mcduPanel087').classList.toggle('show',open);$('mcduBtn087').classList.toggle('active',open);if(open){updateFms087();renderMcdu087(true)}};$('mcduClose087').onclick=()=>{$('mcduPanel087').classList.remove('show');$('mcduBtn087').classList.remove('active')};document.querySelectorAll('[data-mcdu-page]').forEach(b=>b.onclick=()=>{FMS087.page=b.dataset.mcduPage;FMS087.lastRenderSig='';renderMcdu087(true)});
@@ -6440,7 +6445,7 @@ function ensureTraffic3D060(){
  function updateTraffic3D060(){if(!THREE_WORLD.ready)return;ensureTraffic3D060();const g=THREE_WORLD.traffic060,T=OPS.traffic;if(!g)return;const p=trafficWorld060();g.visible=!!p;if(!p)return;g.position.set(p.x,p.y+1.8,p.z);g.rotation.set(0,p.heading*DEG,0)}
  function drawAll(){if(THREE_WORLD.ready){updateTraffic3D060();THREE_WORLD.render()}drawWeatherFx053();drawPFD();drawND()}
  function frame(now){const dt=Math.min(.05,(now-sim.last)/1000||.016);sim.last=now;if(REPLAY.active)replayTick(dt);else{advanceSimulation070(dt);AUDIO.update()}drawAll();if(REPLAY.active)drawReplayAnalysis();requestAnimationFrame(frame)}
- addEventListener('resize',drawAll);addEventListener('orientationchange',()=>setTimeout(drawAll,180));
+ addEventListener('resize',()=>drawAll());addEventListener('orientationchange',()=>setTimeout(drawAll,180));
  bootWorld053();
  
 window.__MA_NAVDATA_AUTOTEST_120__=()=>{
@@ -18959,7 +18964,12 @@ document.addEventListener('click',(ev)=>{
   const _start299=startApproach053;
   startApproach053=async function(){
     try{
-      if(MENU290.mode==='FREE'&&!STARTLOC180.userChosen){
+      /* v0.29.84 · 사용자가 ADVANCED 에서 OPERATION 을 직접 고르면 (STARTLOC180.opChosen)
+         시나리오 기본 시작점을 강제하지 않는다. lockStart304 도 같은 규칙.
+         TAKEOFF 가 켜져 있으면 시작 지점은 무관하다. */
+      let to381=false; try{ to381=!!TAKEOFF352.enabled }catch(_){}
+      const opChosen381=STARTLOC180.opChosen===true;
+      if(MENU290.mode==='FREE'&&!STARTLOC180.userChosen&&!opChosen381&&!to381){
         const d=scenarioDef229?.();
         if(d&&d.start&&STARTLOC180.selected!==d.start)forceScenarioStart299();
       }
@@ -19546,7 +19556,7 @@ const LOCKED304={on:false, start:null, scen:null, airport:null, ops:null};
 function lockStart304(){
   try{
     const d=scenarioDef229?.();
-    const manualStart=STARTLOC180.userChosen===true;
+    const manualStart=STARTLOC180.userChosen===true||STARTLOC180.opChosen===true; /* v0.29.84 */
     LOCKED304.scen=manualStart?null:(SCEN229?.key||null);
     LOCKED304.start=manualStart?STARTLOC180.selected:((d&&d.start)||STARTLOC180.selected);
     LOCKED304.ops=manualStart?OPS.mode:((d&&d.ops)||OPS.mode);
@@ -26888,6 +26898,7 @@ function applyScenario229(key,rebuild=true){
   setIncident338(d.events?'EVENTS':'STABLE');
   OPS.failureChoice='RANDOM';
   setOperation060(d.ops);
+  STARTLOC180.opChosen=false;
   STARTLOC180.userChosen=true;
   selectStartLocation180(d.start,false);
   document.querySelectorAll('[data-scen229]').forEach(b=>b.classList.toggle('on',b.dataset.scen229===key));
@@ -32085,6 +32096,390 @@ window.__MERIDIAN_PAGE_340__=()=>({
 
 }catch(e){ console.warn('[PAGE340 설치 실패]',e) }
 
+/* ==========================================================
+   v0.29.84 · QA 회귀 수정 (PATCH381)
+   1) G/S 기하 : gsGroundOffset381 — TCH(기본 50 ft)를 활공각으로 나눈 지상점 오프셋.
+      updateNav 의 elevAngle 이 이 값을 더해 시단을 TCH 로 통과하는 빔이 된다.
+   2) 전파고도계 : 지형 높이를 해수면(0 m) 아래로 내려보내지 않는다.
+      맵 영역 밖 해역의 해저(-900~-1600 m)가 RA 와 충돌 판정에 새던 문제.
+   3) 폰 가로 레이아웃 : 세로용 1열 덱이 가로에서 화면을 다 먹어 시야가 0 이 됐다.
+      가로에서는 좌(윈드실드) · 우(계기·조작) 2열로 바꾸고 덱은 세로 스크롤시킨다.
+   4) 자동시험 재기준 : LANDING / APPROACH 자동시험을 현재 시작 프로파일에 맞춰 다시 쓴다.
+   ========================================================== */
+function gsGroundOffset381(){
+  try{
+    const R=airport.runway||{}, I=R.ils||{};
+    const tchM=(Number.isFinite(Number(I.tchFt))?Number(I.tchFt):50)*FT;
+    const g=Number(I.glideDeg??R.glideDeg??3)||3;
+    return clamp(tchM/Math.tan(g*DEG),0,600);
+  }catch(_){ return 290 }
+}
+try{
+  const _th381=terrainHeightAt;
+  terrainHeightAt=function(x,z){ return Math.max(0,_th381(x,z)) };
+}catch(e){ console.warn('[PATCH381 RA]',e) }
+
+/* ---------- 가로 조종석 (LANDSCAPE382) --------------------------
+   가로로 눕히는 이유는 양손 엄지로 조종하기 위해서다. 이 게임의
+   조종은 classifyDual210 에서 보듯 조종 영역 안의 두 포인터를 x 로
+   정렬해 왼쪽=롤 / 오른쪽=피치로 나눈다. 따라서 조종 영역이 화면
+   전체 폭을 덮어야 오른손 엄지가 산다. 덱을 오른쪽 열에 두면
+   오른손이 덱 위에 올라가 양손 조작이 죽는다.
+
+   v0.7.3 hardMobile073 는 세로 전용이라 #app 을 `minmax(0,1fr) auto`
+   로 두고, 세로 1열 덱(PFD/ND · 페이지탭 · THR · AUTOFLIGHT · FCU ·
+   AP)은 700 px 이 넘는다. 가로 412 px 에서는 덱이 전부를 먹었다.
+   원본의 @media(orientation:landscape) 규칙은 !important 가 없어
+   073 에 전부 덮인다.
+
+   가로 구성 :
+     상단   윈드실드 위에 뜨는 스트립 — PFD/ND · THR · GO AROUND
+     하단   스트립 아래 전체가 조종 영역 (좌우 엄지 모두 닿는다)
+     DECK   나머지 계기(FCU · AP · FLAP/GEAR · 오버헤드 · 요크)는
+            DECK 버튼으로 펼치는 서랍. 펼치면 덱이 스크롤된다.
+   윈드실드는 화면 전체를 쓰고 덱이 그 위에 겹친다.
+   ---------------------------------------------------------------- */
+(function landscape382(){
+  const css=`
+@media (orientation:landscape) and (max-height:620px){
+ /* 윈드실드가 화면 전체, 덱은 그 위에 겹치는 오버레이 */
+ html.hardMobile073 body #app,
+ html.hardMobile073 body.pg340_0 #app,
+ html.hardMobile073 body.pg340_1 #app,
+ html.hardMobile073 body.pg340_2 #app{
+  grid-template-rows:minmax(0,1fr)!important;
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ html.hardMobile073 body #viewPane{
+  grid-area:1/1!important;z-index:1!important;
+  width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;
+ }
+ html.hardMobile073 body #instruments{
+  grid-area:1/1!important;z-index:34!important;align-self:start!important;
+  margin-top:42px!important;height:auto!important;min-height:0!important;
+  background:linear-gradient(180deg,rgba(3,13,20,.93),rgba(4,16,24,.88))!important;
+  border-top:1px solid rgba(190,223,245,.16)!important;
+  border-bottom:1px solid rgba(190,223,245,.16)!important;
+  box-shadow:0 10px 26px rgba(0,0,0,.34)!important;
+  padding:5px max(6px,env(safe-area-inset-right)) 5px max(6px,env(safe-area-inset-left))!important;
+ }
+
+ /* ---- 접힌 상태 : PFD/ND + THR + FLAP/GEAR + GO AROUND ---- */
+ html.hardMobile073 body:not(.landDeck382) #instruments{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 178px 42px!important;
+  grid-template-rows:auto auto!important;
+  gap:5px!important;overflow:hidden!important;
+ }
+ html.hardMobile073 body:not(.landDeck382) #instruments>*{display:none!important;margin:0!important}
+ html.hardMobile073 body:not(.landDeck382) #instruments>#displayRow{
+  display:grid!important;grid-column:1!important;grid-row:1/3!important;
+  height:116px!important;min-height:116px!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:5px!important;
+ }
+ html.hardMobile073 body:not(.landDeck382) #instruments>.throttleBox{
+  display:grid!important;grid-column:2!important;grid-row:1!important;
+  min-height:32px!important;height:32px!important;
+ }
+ /* FLAP · GEAR · GO AROUND 는 모두 deckWrap273 > configRow 안에 있다.
+    접힘 상태에서는 그 셋만 꺼내 오른쪽 열에 2행으로 배치한다. */
+ html.hardMobile073 body:not(.landDeck382) #instruments>#deckWrap273{
+  display:block!important;grid-column:2!important;grid-row:2!important;
+  height:auto!important;max-height:none!important;min-height:0!important;
+  padding:0!important;border:0!important;background:none!important;
+  overflow:visible!important;box-shadow:none!important;
+ }
+ html.hardMobile073 body:not(.landDeck382) #deckWrap273>*{display:none!important}
+ html.hardMobile073 body:not(.landDeck382) #deckWrap273>#configRow{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  grid-auto-rows:auto!important;gap:4px!important;
+ }
+ html.hardMobile073 body:not(.landDeck382) #configRow>*{display:none!important}
+ html.hardMobile073 body:not(.landDeck382) #configRow>#flapBtn{
+  display:block!important;grid-column:1!important;grid-row:1!important;
+  width:100%!important;min-height:34px!important;height:34px!important;font-size:8.5px!important;padding:2px!important;
+ }
+ html.hardMobile073 body:not(.landDeck382) #configRow>#gearBtn{
+  display:block!important;grid-column:2!important;grid-row:1!important;
+  width:100%!important;min-height:34px!important;height:34px!important;font-size:8.5px!important;padding:2px!important;
+ }
+ html.hardMobile073 body:not(.landDeck382) #configRow>#goAroundBtn{
+  display:block!important;grid-column:1/-1!important;grid-row:2!important;
+  width:100%!important;min-height:38px!important;height:38px!important;font-size:9.5px!important;padding:2px!important;
+ }
+ /* 스트립 아래 전체가 조종 영역 — 양손 엄지가 모두 닿는다 */
+ html.hardMobile073 body:not(.landDeck382) #flightControlZone216{
+  top:var(--strip382,172px)!important;bottom:0!important;left:0!important;right:0!important;
+ }
+
+ /* ---- 펼친 상태 : 덱 전체를 스크롤 ---- */
+ html.hardMobile073 body.landDeck382 #instruments{
+  display:block!important;
+  height:calc(100% - 42px)!important;max-height:calc(100% - 42px)!important;
+  overflow-y:auto!important;overflow-x:hidden!important;
+  overscroll-behavior:contain!important;touch-action:pan-y!important;
+  -webkit-overflow-scrolling:touch;
+ }
+ html.hardMobile073 body.landDeck382 #instruments>*{margin:0 0 5px 0!important}
+ html.hardMobile073 body.landDeck382 #displayRow{height:120px!important;min-height:120px!important}
+ html.hardMobile073 body.landDeck382 #yoke344{height:200px!important;min-height:200px!important}
+
+ /* ---- DECK 토글 ----
+    접힘 규칙의 #instruments>* 숨김보다 우선해야 하므로
+    토글에도 같은 :not() 스코프 + id 를 붙여 특이도를 올린다. */
+ html.hardMobile073 body:not(.landDeck382) #instruments>#deckToggle382{
+  display:block!important;min-height:0!important;padding:4px 2px!important;
+  font:900 9px/1.1 ui-monospace,monospace!important;letter-spacing:.10em!important;
+  grid-column:3!important;grid-row:1/3!important;align-self:stretch!important;
+  width:42px!important;height:auto!important;writing-mode:vertical-rl!important;
+ }
+ html.hardMobile073 body.landDeck382 #instruments>#deckToggle382{
+  display:block!important;min-height:0!important;padding:4px 8px!important;
+  font:900 9px/1.1 ui-monospace,monospace!important;letter-spacing:.10em!important;
+  position:sticky!important;top:0!important;z-index:6!important;
+  width:100%!important;height:32px!important;writing-mode:horizontal-tb!important;
+ }
+
+ /* 윈드실드 위 표시 정리 */
+ html.hardMobile073 body #brand .brandFull{display:none!important}
+ html.hardMobile073 body #missionStrip{display:none!important}
+ /* ASSIST 카드는 조종 영역 위쪽에 붙인다. 엄지는 아래 양쪽 모서리에 놓이므로
+    카드가 아래에 있으면 작은 화면에서 조종 면적을 잡아먹는다. */
+ html.hardMobile073 body #assistCard234{
+  width:min(400px,78%)!important;
+  top:calc(var(--strip382,172px) + 4px)!important;bottom:auto!important;
+  padding:6px 9px!important;
+ }
+}
+/* 가로가 아니면 토글은 없다 */
+#deckToggle382{display:none}
+/* 빠른 비행 버튼 */
+#quickBtn383,#finishQuick383{
+ border-color:rgba(115,241,166,.52)!important;
+ background:linear-gradient(180deg,#155039,#0b3326)!important;
+ color:#c8ffdd!important;font-weight:900!important;letter-spacing:.04em;
+}
+#quickBtn383:active,#finishQuick383:active{background:linear-gradient(180deg,#1b6647,#0e4231)!important}
+/* ASSIST 카드는 조종 영역(z 32) 위에 있어야 버튼이 눌리지만,
+   배경까지 이벤트를 먹으면 카드 자리에서 스틱 드래그가 죽는다.
+   카드는 통과시키고 버튼만 받는다. */
+#assistCard234{pointer-events:none!important}
+#assistCard234 button{pointer-events:auto!important}
+/* 상단 버튼 줄이 화면 밖으로 밀리던 문제 (세로 포함) */
+/* #topActions 는 뒤에서 grid 로 바뀌었고 #topbar 가 뷰포트 폭만큼 잡혀
+   왼쪽 여백(5 px)만큼 ⋯ 버튼이 오른쪽으로 잘려 나갔다. 폭을 직접 묶는다. */
+html body #topbar{box-sizing:border-box!important;max-width:calc(100vw - 12px)!important;overflow:visible!important}
+#topActions{min-width:0!important}
+`;
+  function install(){
+    try{
+      if(document.getElementById('landscape382Css'))return;
+      const st=document.createElement('style');
+      st.id='landscape382Css'; st.textContent=css;
+      (document.body||document.documentElement).appendChild(st);
+    }catch(e){ console.warn('[landscape382]',e) }
+  }
+  if(document.body)install();
+  else addEventListener('DOMContentLoaded',install,{once:true});
+
+  function isLand382(){
+    return document.documentElement.classList.contains('hardMobile073')
+        && innerWidth>innerHeight && innerHeight<=620;
+  }
+  /* DECK 토글 — 나머지 계기를 펼치고 접는다 */
+  function ensureToggle382(){
+    const inst=document.getElementById('instruments'); if(!inst)return null;
+    let b=document.getElementById('deckToggle382');
+    if(!b){
+      b=document.createElement('button');
+      b.id='deckToggle382'; b.type='button';
+      b.setAttribute('aria-label','계기 덱 펼치기/접기');
+      b.onclick=()=>{
+        const on=document.body.classList.toggle('landDeck382');
+        b.textContent=on?'DECK ▴ 닫기':'DECK ▾';
+        try{ AUDIO.button?.() }catch(_){}
+        setTimeout(()=>{ syncStrip382(); relayout() },60);
+      };
+      b.textContent=document.body.classList.contains('landDeck382')?'DECK ▴ 닫기':'DECK ▾';
+    }
+    if(b.parentElement!==inst)inst.insertBefore(b,inst.firstChild);
+    return b;
+  }
+  /* 조종 영역이 스트립 바로 아래에서 시작하도록 실제 높이를 잰다 */
+  function syncStrip382(){
+    try{
+      const root=document.documentElement;
+      if(!isLand382()){ root.style.removeProperty('--strip382'); return }
+      ensureToggle382();
+      const inst=document.getElementById('instruments'); if(!inst)return;
+      if(document.body.classList.contains('landDeck382'))return;
+      const bottom=Math.round(inst.getBoundingClientRect().bottom)+6;
+      if(bottom>60&&bottom<innerHeight-60)root.style.setProperty('--strip382',bottom+'px');
+    }catch(e){ console.warn('[landscape382 strip]',e) }
+  }
+  const relayout=()=>{ try{ drawAll() }catch(_){} try{ THREE_WORLD?.resize?.() }catch(_){} };
+  /* 가로를 벗어나면 펼침 상태를 남기지 않는다 */
+  function orient382(){
+    if(!isLand382())document.body.classList.remove('landDeck382');
+    syncStrip382();
+  }
+  addEventListener('resize',()=>setTimeout(()=>{ orient382(); relayout() },120));
+  addEventListener('orientationchange',()=>setTimeout(()=>{ orient382(); relayout() },260));
+  setTimeout(orient382,1200);
+  setInterval(syncStrip382,2500);
+  window.__MERIDIAN_LANDSCAPE_382__=()=>({
+    landscape:isLand382(), deckOpen:document.body.classList.contains('landDeck382'),
+    strip:getComputedStyle(document.documentElement).getPropertyValue('--strip382').trim(),
+    toggle:!!document.getElementById('deckToggle382'),
+    open:(v)=>{ document.body.classList.toggle('landDeck382',v!==false);
+      const b=document.getElementById('deckToggle382');
+      if(b)b.textContent=document.body.classList.contains('landDeck382')?'DECK ▴ 닫기':'DECK ▾';
+      syncStrip382(); return document.body.classList.contains('landDeck382') }
+  });
+})();
+
+/* ---------- 빠른 비행 (QUICK383) --------------------------------
+   공항 · 날씨 · 시간대를 모두 무작위로 뽑고 최종접근에서 바로 시작한다.
+   착륙만 반복해서 즐기는 모드라 무작위 고장(EVENTS)은 끄고 STABLE 로 둔다.
+   시작 지점은 userChosen / opChosen 을 세워 시나리오 기본값이 덮어쓰지
+   못하게 한다(v0.29.81 에서 고친 그 경로).
+   ---------------------------------------------------------------- */
+const QUICK383={last:null,
+  wx:['CLEAR','SCATTERED','OVERCAST','RAIN_LIGHT','RAIN','STORM','HAZE'],
+  env:['DAY','SUNSET','NIGHT'],
+  wxLabel:{CLEAR:'맑음',SCATTERED:'구름 조금',OVERCAST:'흐림',RAIN_LIGHT:'약한 비',RAIN:'비',STORM:'폭풍',HAZE:'연무'},
+  envLabel:{DAY:'주간',SUNSET:'일몰',NIGHT:'야간'}};
+
+function quickPick383(){
+  if(sim.running)return null;
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  const ids=Object.keys(AIRPORTS).filter(id=>AIRPORTS[id]?.runway?.id);
+  if(!ids.length)return null;
+  const id=pick(ids), wxk=pick(QUICK383.wx), envk=pick(QUICK383.env);
+  try{ setAirport(id) }catch(e){ console.warn('[quick383 airport]',e) }
+  try{ setWeather(wxk) }catch(_){}
+  try{ setEnvironment(envk) }catch(_){}
+  try{ setIncident338('STABLE') }catch(_){}
+  try{
+    STARTLOC180.opChosen=true;
+    setOperation060('LANDING');
+    selectStartLocation180('FINAL_3',true);
+  }catch(e){ console.warn('[quick383 start]',e) }
+  try{ updateBriefing() }catch(_){}
+  QUICK383.last={airport:airport?.id||id, runway:airport?.runway?.id||null, weather:wxk, env:envk};
+  return QUICK383.last;
+}
+/* 최종접근 경로가 지형에 막혀 있지 않은지 본다.
+   IS01 처럼 최종 5 NM 에 산이 걸친 공항이 있다. 지형 안전 보정
+   (safeOperationStart079)은 맵 로드 전에 돌기 때문에 타이밍에 따라
+   스폰을 6,000 ft 로 띄우거나(경로 훨씬 위) 지형 속에 넣는다(RA 0).
+   빠른 비행은 46 개에서 무작위로 뽑으므로 이런 곳을 자주 만난다.
+   3° 경로가 지형 위로 얼마나 여유가 있는지 재서 걸러낸다. */
+function finalPathClear383(){
+  try{
+    const R=airport?.runway||{}, I=R.ils||{};
+    const gs=Number(I.glideDeg??R.glideDeg??3)||3, tch=Number(I.tchFt??50);
+    let worst=1e9;
+    for(let nm=1.0;nm<=6.5;nm+=0.5){
+      const q=localToWorld(0,-nm*NM);
+      const tft=terrainHeightAt(q.x,q.z)/FT;
+      const pathFt=airport.elevationFt+tch+Math.tan(gs*DEG)*(nm*NM)/FT;
+      worst=Math.min(worst,pathFt-tft);
+    }
+    return worst;
+  }catch(_){ return 1e9 }
+}
+async function quickFlight383(){
+  let q=null,clear=null;
+  for(let attempt=0;attempt<3;attempt++){
+    try{ sim.running=false; sim.finished=false }catch(_){}
+    q=quickPick383(); if(!q)return null;
+    try{ await startApproach053() }catch(e){ console.warn('[quick383 start]',e) }
+    clear=finalPathClear383();
+    QUICK383.last.clearanceFt=Math.round(clear);
+    QUICK383.last.attempt=attempt+1;
+    if(clear>=150)break;
+    console.warn('[quick383] final path blocked at',q.airport,Math.round(clear),'ft — 다시 뽑는다');
+  }
+  /* 세 번 모두 막히면 검증된 기본 공항으로 */
+  if(clear!=null&&clear<150&&AIRPORTS.MRDN){
+    try{ sim.running=false; sim.finished=false; setAirport('MRDN');
+      STARTLOC180.opChosen=true; setOperation060('LANDING'); selectStartLocation180('FINAL_3',true);
+      await startApproach053();
+      QUICK383.last={airport:'MRDN',runway:airport?.runway?.id||null,weather:weatherKey,env:envKey,
+        clearanceFt:Math.round(finalPathClear383()),fallback:true};
+      q=QUICK383.last;
+    }catch(e){ console.warn('[quick383 fallback]',e) }
+  }
+  try{
+    coach('quick383',`<span class="good">빠른 비행</span> · ${q.airport} RWY ${q.runway||''} · `+
+      `${QUICK383.wxLabel[q.weather]||q.weather} · ${QUICK383.envLabel[q.env]||q.env} · 최종접근에서 시작합니다.`,5.0);
+  }catch(_){}
+  return q;
+}
+function ensureQuickBtn383(){
+  try{
+    const row=document.querySelector('#startOverlay .briefActions');
+    if(row&&!document.getElementById('quickBtn383')){
+      const b=document.createElement('button');
+      b.id='quickBtn383'; b.type='button';
+      b.textContent='⚡ 빠른 비행 · 무작위 착륙';
+      b.onclick=()=>{ try{AUDIO.button?.()}catch(_){}; try{AUDIO.unlock?.()}catch(_){}; quickFlight383() };
+      row.insertBefore(b,row.firstChild);
+    }
+    const fin=document.querySelector('#finishOverlay .row');
+    if(fin&&!document.getElementById('finishQuick383')){
+      const b=document.createElement('button');
+      b.id='finishQuick383'; b.type='button';
+      b.textContent='⚡ 빠른 비행';
+      b.onclick=()=>{ try{AUDIO.button?.()}catch(_){};
+        try{ $('finishOverlay').classList.remove('show') }catch(_){}
+        sim.running=false; sim.paused=false;
+        quickFlight383() };
+      fin.insertBefore(b,fin.firstChild);
+    }
+  }catch(e){ console.warn('[quick383 ui]',e) }
+}
+setTimeout(ensureQuickBtn383,1300);
+setInterval(ensureQuickBtn383,3000);
+window.__MERIDIAN_QUICK_383__=()=>({last:QUICK383.last, clearance:()=>Math.round(finalPathClear383()),
+  buttons:{start:!!document.getElementById('quickBtn383'),finish:!!document.getElementById('finishQuick383')},
+  pick:()=>quickPick383(), fly:()=>quickFlight383()});
+
+/* 자동착륙 회귀 시험 : FINAL 10 · CLEAR · STABLE · AP1+AP2 APPR */
+function autolandTrial381(startId,wxKey){
+  const keep={mode:OPS.mode,wx:weatherKey,start:STARTLOC180.selected,user:STARTLOC180.userChosen,inc:INCIDENT338.mode};
+  OPS.mode='MANUAL';weatherKey=wxKey||'CLEAR';INCIDENT338.mode='STABLE';
+  STARTLOC180.selected=startId;STARTLOC180.userChosen=true;
+  try{refreshSpawnProfiles180()}catch(_){}
+  reset();sim.running=true;
+  let steps=0;const maxSteps=12000;
+  for(;steps<maxSteps&&!sim.finished;steps++){
+    if(ac.distNm<8.0&&sim.flap<1){sim.flap=1;sim.selSpd=170}
+    if(ac.distNm<6.5&&sim.flap<2){sim.flap=2;sim.selSpd=160}
+    if(ac.distNm<5.2&&!sim.gear)sim.gear=true;
+    if(ac.distNm<4.2&&sim.flap<3){sim.flap=3;sim.selSpd=148}
+    if(ac.distNm<1.8&&sim.flap<4)sim.flap=4;
+    if(com.request==='APP')tuneCom('APP');if(com.request==='TWR')tuneCom('TWR');if(com.request==='GND')tuneCom('GND');
+    if(!sim.app){sim.app=true;sim.locArmed=true;sim.gsArmed=true}
+    if(!sim.ap2){sim.ap1=true;sim.ap2=true;syncApMaster083()}
+    if(ac.onGround&&sim.reverse===0)sim.reverse=.45;
+    step(.05);
+  }
+  const out={version:'0.29.84',airport:airport.id,runway:airport.runway.id,start:startId,steps,t:+sim.t.toFixed(1),
+    finished:sim.finished,landed:sim.landed,landMode:sim.landMode,touchZ:evals.touchZ==null?null:Math.round(evals.touchZ),
+    touchX:evals.touchX==null?null:+evals.touchX.toFixed(1),touchVs:evals.touchVs==null?null:Math.round(evals.touchVs),
+    spoilers:evals.spoilerDeployed,noseGear:sim.noseGearOnGround};
+  out.pass=!!(sim.finished&&sim.landed&&evals.touchZ>=60&&evals.touchZ<=900&&evals.touchVs>-420&&Math.abs(evals.touchX)<12);
+  OPS.mode=keep.mode;weatherKey=keep.wx;INCIDENT338.mode=keep.inc;STARTLOC180.selected=keep.start;STARTLOC180.userChosen=keep.user;
+  return out;
+}
+window.__MERIDIAN_LANDING_AUTOTEST_085__=()=>autolandTrial381('FINAL_3');
+window.__MERIDIAN_APPROACH_AUTOTEST__=()=>autolandTrial381('FINAL_10');
+window.__MERIDIAN_PATCH_381__=()=>({gsGroundOffsetM:+gsGroundOffset381().toFixed(1), raClamped:terrainHeightAt(ac.x,ac.z)>=0,
+  autoland:(id,wx)=>autolandTrial381(id||'FINAL_10',wx)});
+
 })();
 </script>
 
@@ -32504,7 +32899,7 @@ addEventListener('DOMContentLoaded',()=>{
    document.querySelectorAll('[data-op060]').forEach(b=>mo.observe(b,{attributes:true,attributeFilter:['class']}));
    document.querySelectorAll('[data-op060]').forEach(b=>b.addEventListener('click',()=>setTimeout(fixAdvancedLabel,5)));
    window.addEventListener('meridian-preflight338',syncIncident);
-   const brand=document.querySelector('#brand .brandFull');if(brand)brand.textContent='MERIDIAN APPROACH · v0.29.80';
+   const brand=document.querySelector('#brand .brandFull');if(brand)brand.textContent='MERIDIAN APPROACH · v0.29.84';
    return true;
  }
  let tries=0;const boot=()=>{if(build338())return;if(++tries<30)setTimeout(boot,180)};

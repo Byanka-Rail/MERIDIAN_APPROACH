@@ -1,10 +1,11 @@
-56989e0909721d96dcb23b5fb42e4e98dfe204df6b62549fd3c33367334c52bc  ./.github/workflows/build-apk.yml
-9c9fae8596bb80de9a0daeb872b1549ab5ed20952257cd3c16b12ad44cbcdb73  ./README.md
-fd05be47d7df3d63af2bb4d781320ad2bbe64341a8cd428e087ce665cd3b8b78  ./app/build.gradle
+f41b7c7c844f4ea970e38341484681f6500b0de60fbc2a7ab49de05d03b2157f  ./.github/workflows/build-apk.yml
+3c00739bcbd7f52cb9e0ff1ba83633b1569174b34fadb6eac051ff4a305a880f  ./FILES.sha256
+362b339d23ba61656369d147f4241f07c8b9529a3b8c9b5c208c3cba35742b08  ./README.md
+27dee75f817762825ea9875c896e719283c98fddc33c7cb39a71c20b622d5b5b  ./app/build.gradle
 e96092fea0cdf8f7f252f15a4c7ea11301865e1335e142bc3c37d588057fff61  ./app/proguard-rules.pro
 92f32a5621efbf7c62394ea65cc200141ce0ad977bcb0cd22a426c9f01234635  ./app/src/main/AndroidManifest.xml
-f0e6d2b6441ec592821d400d3008e164961d2774b1e88f367e4fb2b9b448b157  ./app/src/main/assets/MERIDIAN_APPROACH.html
-f36076a3c789cdd92353dc630758e8605bada8f53e1393ea81f7029f683e1faa  ./app/src/main/java/com/meridian/approach/MainActivity.java
+6aa29cfa6054e866939ca59d3808f7ae27355116bc78338f1e79b1886f8f0412  ./app/src/main/assets/MERIDIAN_APPROACH.html
+c373cb7635283871c11f464d570826374a317d8f9389e08877390cc9996cccf0  ./app/src/main/java/com/meridian/approach/MainActivity.java
 5aae364ca8947d9c90e077c034263c0a80bc433934edc6fba8f7d66931e0592a  ./app/src/main/res/drawable/ic_launcher.xml
 3c3beb9988a66d2761333ab35d2afc74b579493aaf729f1c8dc106a93b02e971  ./app/src/main/res/values/strings.xml
 e45490da4b1041a9f32a44bbc8c8f21d16d9bc4d300797ed42cbd3fa6d63edbb  ./app/src/main/res/values/themes.xml

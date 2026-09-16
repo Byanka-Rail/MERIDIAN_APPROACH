@@ -10,6 +10,8 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.PermissionRequest;
+import android.webkit.RenderProcessGoneDetail;
+import android.widget.Toast;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -20,6 +22,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private ValueCallback<Uri[]> fileChooserCallback;
     private static final int FILE_CHOOSER_REQUEST = 1107;
+    private long lastBackPressMs = 0L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +57,25 @@ public class MainActivity extends Activity {
         s.setLoadWithOverviewMode(false);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            // v0.29.81: a 10 MB page with large textures can lose its renderer under memory
+            // pressure. Without this override the whole app is killed; instead we rebuild the
+            // Activity so the game reloads to its menu.
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                if (view == webView) {
+                    try {
+                        webView.destroy();
+                    } catch (Exception ignored) {
+                    }
+                    webView = null;
+                    Toast.makeText(MainActivity.this, "화면 프로세스가 종료되어 다시 불러옵니다.", Toast.LENGTH_SHORT).show();
+                    recreate();
+                    return true;
+                }
+                return false;
+            }
+        });
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView view,
@@ -139,8 +160,16 @@ public class MainActivity extends Activity {
     public void onBackPressed() {
         if (webView != null && webView.canGoBack()) {
             webView.goBack();
-        } else {
+            return;
+        }
+        // v0.29.81: the game is a single page, so a stray back press used to quit mid-flight.
+        // Require a second press within two seconds.
+        long now = System.currentTimeMillis();
+        if (now - lastBackPressMs < 2000L) {
             super.onBackPressed();
+        } else {
+            lastBackPressMs = now;
+            Toast.makeText(this, "한 번 더 누르면 MERIDIAN APPROACH 를 종료합니다.", Toast.LENGTH_SHORT).show();
         }
     }
 
