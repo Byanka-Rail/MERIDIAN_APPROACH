@@ -38,7 +38,6 @@ public class MainActivity extends Activity {
     private WebView webView;
     private ValueCallback<Uri[]> fileChooserCallback;
     private static final int FILE_CHOOSER_REQUEST = 1107;
-    private long lastBackPressMs = 0L;
 
     // 포병(FIRE DIRECTION LAB)과 같은 업데이트 방식:
     // 저장소 최상위 update.json 을 보고, 더 높은 build 면 그 HTML 을 받아 앱 안 저장소에 두고 file:// 로 띄운다.
@@ -49,6 +48,8 @@ public class MainActivity extends Activity {
     private static final Pattern TITLE_VER = Pattern.compile("<title>[^<]*?v(\\d+)\\.(\\d+)\\.(\\d+)");
     private SharedPreferences prefs;
     private int bundledBuild = 0;
+    private volatile boolean checking = false;
+    private long lastCheckMs = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -135,6 +136,17 @@ public class MainActivity extends Activity {
             }
         });
 
+        webView.addJavascriptInterface(new Object() {
+            // 게임 화면에서 부를 수 있는 훅: MeridianApproachAndroid.checkUpdate() / appInfo()
+            @android.webkit.JavascriptInterface
+            public void checkUpdate() { runOnUiThread(() -> checkForUpdate(true)); }
+
+            @android.webkit.JavascriptInterface
+            public String appInfo() {
+                return "{\"app\":\"" + BuildConfig.VERSION_NAME + "\",\"game\":\"" + currentVersionLabel() + "\"}";
+            }
+        }, "MeridianApproachAndroid");
+
         prefs = getSharedPreferences("ma_update", MODE_PRIVATE);
         bundledBuild = readBundledBuild();
         // 새 APK 에 든 판이 받아 둔 판보다 같거나 높으면 받아 둔 것을 버린다
@@ -182,8 +194,27 @@ public class MainActivity extends Activity {
         return Integer.parseInt(m.group(1)) * 1000000 + Integer.parseInt(m.group(2)) * 1000 + Integer.parseInt(m.group(3));
     }
 
-    private void checkForUpdate() {
+    private void toast(final String msg, final boolean longer) {
+        runOnUiThread(() -> { if (!isFinishing()) Toast.makeText(MainActivity.this, msg, longer ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show(); });
+    }
+
+    private String currentVersionLabel() {
+        String v = prefs.getString("current_version", "");
+        if (!v.isEmpty() && prefs.getInt("current_build", 0) > bundledBuild) return v;
+        int b = bundledBuild;
+        return (b / 1000000) + "." + ((b / 1000) % 1000) + "." + (b % 1000);
+    }
+
+    // manual=true 면 "최신입니다" · 실패 이유까지 알려 준다. 자동 확인은 새 판이 있을 때만 말한다.
+    private void checkForUpdate() { checkForUpdate(false); }
+
+    private void checkForUpdate(final boolean manual) {
+        if (checking) { if (manual) toast("업데이트 확인 중입니다", false); return; }
+        checking = true;
+        lastCheckMs = System.currentTimeMillis();
+        if (manual) toast("업데이트 확인 중… (현재 v" + currentVersionLabel() + ")", false);
         new Thread(() -> {
+            String stage = "update.json";
             try {
                 JSONObject o = new JSONObject(new String(readUrl(UPDATE_JSON + "?_=" + System.currentTimeMillis(), 64 * 1024), StandardCharsets.UTF_8));
                 int build = o.optInt("build", 0);
@@ -191,7 +222,12 @@ public class MainActivity extends Activity {
                 String version = o.optString("version", "");
                 String sha = o.optString("sha256", "").trim();
                 int current = Math.max(bundledBuild, prefs.getInt("current_build", 0));
-                if (build <= current || file.isEmpty()) return;
+                if (build <= current || file.isEmpty()) {
+                    if (manual) toast("최신 버전입니다 · v" + currentVersionLabel(), false);
+                    return;
+                }
+                toast("새 버전 v" + version + " 받는 중… 비행은 계속 하셔도 됩니다", true);
+                stage = "게임 파일";
 
                 String url = file.startsWith("https://") ? file : RAW_BASE + URLEncoder.encode(file, "UTF-8").replace("+", "%20");
                 byte[] bytes = readUrl(url + "?_=" + System.currentTimeMillis(), MAX_GAME_BYTES);
@@ -216,7 +252,11 @@ public class MainActivity extends Activity {
                             .show();
                 });
             } catch (Exception e) {
-                // 네트워크 실패나 검증 실패는 게임 실행을 막지 않는다
+                // 네트워크 실패나 검증 실패는 게임 실행을 막지 않는다. 다만 새 판을 받던 중이거나 직접 확인한 경우엔 알려 준다.
+                if (manual || !"update.json".equals(stage))
+                    toast("업데이트 실패 (" + stage + ") · " + e.getMessage(), true);
+            } finally {
+                checking = false;
             }
         }).start();
     }
@@ -272,6 +312,8 @@ public class MainActivity extends Activity {
         super.onResume();
         if (webView != null) webView.onResume();
         applyImmersiveMode();
+        // 앱을 오래 백그라운드에 두었다가 돌아오면 다시 확인 (30분 간격)
+        if (prefs != null && lastCheckMs > 0 && System.currentTimeMillis() - lastCheckMs > 30L * 60L * 1000L) checkForUpdate(false);
     }
 
     @Override
@@ -297,15 +339,21 @@ public class MainActivity extends Activity {
             webView.goBack();
             return;
         }
-        // v0.29.81: the game is a single page, so a stray back press used to quit mid-flight.
-        // Require a second press within two seconds.
-        long now = System.currentTimeMillis();
-        if (now - lastBackPressMs < 2000L) {
-            super.onBackPressed();
-        } else {
-            lastBackPressMs = now;
-            Toast.makeText(this, "한 번 더 누르면 MERIDIAN APPROACH 를 종료합니다.", Toast.LENGTH_SHORT).show();
-        }
+        // 비행 중 실수로 꺼지지 않게 메뉴를 띄운다. 여기서 업데이트를 직접 확인할 수 있다.
+        showAppMenu();
+    }
+
+    private void showAppMenu() {
+        if (isFinishing()) return;
+        String[] items = {"업데이트 확인", "앱 종료"};
+        new AlertDialog.Builder(MainActivity.this)
+                .setTitle("MERIDIAN APPROACH · v" + currentVersionLabel())
+                .setItems(items, (d, which) -> {
+                    if (which == 0) checkForUpdate(true);
+                    else MainActivity.this.finish();
+                })
+                .setNegativeButton("계속 비행", null)
+                .show();
     }
 
     @Override
