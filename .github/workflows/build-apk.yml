@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main", "master" ]
+    paths:
+      - 'app/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle.properties'
+      - '.github/workflows/build-apk.yml'
 
 jobs:
   build:
@@ -20,11 +26,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
+      # ubuntu 러너에는 Android SDK 가 이미 있다 (setup-android 액션이 깨져서 바꿈).
       - name: Install Android 35 SDK
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKM" || { echo "sdkmanager not found at $SDKM"; ls -la "$ANDROID_HOME" || true; exit 1; }
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
@@ -37,12 +45,12 @@ jobs:
       - name: Prepare artifact
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk dist/MERIDIAN_APPROACH_v0.29.84_DEBUG.apk
-          sha256sum dist/MERIDIAN_APPROACH_v0.29.84_DEBUG.apk > dist/MERIDIAN_APPROACH_v0.29.84_DEBUG.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk dist/MERIDIAN_APPROACH_APP2_DEBUG.apk
+          sha256sum dist/MERIDIAN_APPROACH_APP2_DEBUG.apk > dist/MERIDIAN_APPROACH_APP2_DEBUG.sha256
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MERIDIAN_APPROACH_v0.29.84_ANDROID
+          name: MERIDIAN_APPROACH_APP2_ANDROID
           path: dist/*
           if-no-files-found: error

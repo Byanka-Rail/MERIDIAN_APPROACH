@@ -2,6 +2,15 @@
 
 This project packages the current single-file MERIDIAN APPROACH HTML as an offline Android WebView app.
 
+## 업데이트 올리는 법 (2026-11 · 포병과 같은 방식 · 앱 APP2 부터)
+- 새 판을 `MERIDIAN_APPROACH_v<판>.html` 이름으로 저장소 최상위에 올린다  예) MERIDIAN_APPROACH_v0.29.85.html
+- `<title>` 의 vX.Y.Z 가 파일 이름 판과 같아야 한다 (다르면 워크플로가 멈춘다)
+- 워크플로가 update.json 갱신 · 판 HTML 최근 10개만 유지
+- 깔린 앱은 켤 때 update.json 을 보고 새 판을 받아 띄운다 — APK 를 다시 만들 필요 없음
+- APK 는 앱 코드(app/**)를 바꿀 때만 새로 빌드된다
+- 서명 키는 app/meridian-approach-sideload.keystore 로 고정 — 다음 APK 부터 덮어쓰기 설치가 된다
+- 아래 "Updating only the game later" 안내는 더 이상 필요 없다
+
 ## Included behavior
 
 - Game HTML is bundled at `app/src/main/assets/MERIDIAN_APPROACH.html`.

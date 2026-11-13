@@ -1,6 +1,8 @@
 package com.meridian.approach;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.SharedPreferences;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
@@ -18,11 +20,35 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class MainActivity extends Activity {
     private WebView webView;
     private ValueCallback<Uri[]> fileChooserCallback;
     private static final int FILE_CHOOSER_REQUEST = 1107;
     private long lastBackPressMs = 0L;
+
+    // 포병(FIRE DIRECTION LAB)과 같은 업데이트 방식:
+    // 저장소 최상위 update.json 을 보고, 더 높은 build 면 그 HTML 을 받아 앱 안 저장소에 두고 file:// 로 띄운다.
+    private static final String RAW_BASE = "https://raw.githubusercontent.com/Byanka-Rail/MERIDIAN_APPROACH/main/";
+    private static final String UPDATE_JSON = RAW_BASE + "update.json";
+    private static final String BUNDLED_URL = "file:///android_asset/MERIDIAN_APPROACH.html";
+    private static final long MAX_GAME_BYTES = 40L * 1024L * 1024L;
+    private static final Pattern TITLE_VER = Pattern.compile("<title>[^<]*?v(\\d+)\\.(\\d+)\\.(\\d+)");
+    private SharedPreferences prefs;
+    private int bundledBuild = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,11 +135,120 @@ public class MainActivity extends Activity {
             }
         });
 
+        prefs = getSharedPreferences("ma_update", MODE_PRIVATE);
+        bundledBuild = readBundledBuild();
+        // 새 APK 에 든 판이 받아 둔 판보다 같거나 높으면 받아 둔 것을 버린다
+        if (prefs.getInt("current_build", 0) <= bundledBuild) dropDownloaded();
+
         if (savedInstanceState == null) {
-            webView.loadUrl("file:///android_asset/MERIDIAN_APPROACH.html");
+            webView.loadUrl(gameUrl());
         } else {
             webView.restoreState(savedInstanceState);
         }
+
+        checkForUpdate();
+    }
+
+    // ── 업데이트 ─────────────────────────────────────────────
+    private File downloadedFile() {
+        return new File(new File(getFilesDir(), "game"), "MERIDIAN_APPROACH.html");
+    }
+
+    private String gameUrl() {
+        File f = downloadedFile();
+        if (f.isFile() && prefs.getInt("current_build", 0) > bundledBuild) return Uri.fromFile(f).toString();
+        return BUNDLED_URL;
+    }
+
+    private void dropDownloaded() {
+        File f = downloadedFile();
+        if (f.exists()) f.delete();
+        prefs.edit().remove("current_build").remove("current_version").apply();
+    }
+
+    private int readBundledBuild() {
+        try (InputStream in = getAssets().open("MERIDIAN_APPROACH.html")) {
+            byte[] buf = new byte[8192];
+            int n = in.read(buf);
+            return buildFromHtmlHead(new String(buf, 0, Math.max(n, 0), StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static int buildFromHtmlHead(String head) {
+        Matcher m = TITLE_VER.matcher(head);
+        if (!m.find()) return 0;
+        return Integer.parseInt(m.group(1)) * 1000000 + Integer.parseInt(m.group(2)) * 1000 + Integer.parseInt(m.group(3));
+    }
+
+    private void checkForUpdate() {
+        new Thread(() -> {
+            try {
+                JSONObject o = new JSONObject(new String(readUrl(UPDATE_JSON + "?_=" + System.currentTimeMillis(), 64 * 1024), StandardCharsets.UTF_8));
+                int build = o.optInt("build", 0);
+                String file = o.optString("file", "");
+                String version = o.optString("version", "");
+                String sha = o.optString("sha256", "").trim();
+                int current = Math.max(bundledBuild, prefs.getInt("current_build", 0));
+                if (build <= current || file.isEmpty()) return;
+
+                String url = file.startsWith("https://") ? file : RAW_BASE + URLEncoder.encode(file, "UTF-8").replace("+", "%20");
+                byte[] bytes = readUrl(url + "?_=" + System.currentTimeMillis(), MAX_GAME_BYTES);
+                if (!sha.isEmpty() && !sha.equalsIgnoreCase(sha256(bytes))) throw new Exception("SHA-256 검증 실패");
+                String head = new String(bytes, 0, Math.min(bytes.length, 8192), StandardCharsets.UTF_8);
+                if (!head.toLowerCase().contains("<html")) throw new Exception("HTML 이 아닙니다");
+
+                File dir = downloadedFile().getParentFile();
+                if (dir != null && !dir.isDirectory()) dir.mkdirs();
+                File tmp = new File(dir, "MERIDIAN_APPROACH.html.tmp");
+                try (FileOutputStream os = new FileOutputStream(tmp)) { os.write(bytes); }
+                if (!tmp.renameTo(downloadedFile())) throw new Exception("파일 교체 실패");
+                prefs.edit().putInt("current_build", build).putString("current_version", version).apply();
+
+                runOnUiThread(() -> {
+                    if (isFinishing() || webView == null) return;
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("MERIDIAN APPROACH 업데이트")
+                            .setMessage("v" + version + " 을 받았습니다. 지금 다시 불러올까요?\n(나중에 앱을 다시 켜도 적용됩니다)")
+                            .setPositiveButton("지금", (d, w) -> { if (webView != null) webView.loadUrl(gameUrl()); })
+                            .setNegativeButton("나중에", null)
+                            .show();
+                });
+            } catch (Exception e) {
+                // 네트워크 실패나 검증 실패는 게임 실행을 막지 않는다
+            }
+        }).start();
+    }
+
+    private static byte[] readUrl(String url, long max) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        c.setConnectTimeout(8000);
+        c.setReadTimeout(30000);
+        c.setUseCaches(false);
+        try {
+            if (c.getResponseCode() != 200) throw new Exception("HTTP " + c.getResponseCode());
+            try (InputStream in = c.getInputStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                byte[] buf = new byte[65536];
+                long total = 0;
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    total += n;
+                    if (total > max) throw new Exception("파일이 너무 큽니다");
+                    out.write(buf, 0, n);
+                }
+                return out.toByteArray();
+            }
+        } finally {
+            c.disconnect();
+        }
+    }
+
+    private static String sha256(byte[] bytes) throws Exception {
+        byte[] d = MessageDigest.getInstance("SHA-256").digest(bytes);
+        StringBuilder sb = new StringBuilder();
+        for (byte b : d) sb.append(String.format("%02x", b));
+        return sb.toString();
     }
 
     @Override
