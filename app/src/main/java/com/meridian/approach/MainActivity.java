@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
@@ -62,6 +63,15 @@ public class MainActivity extends Activity {
                 WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED |
                 WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         );
+        // 0.29.92-app4 · 카메라 구멍(디스플레이 컷아웃) 자리까지 화면을 쓴다.
+        // 전체화면(상태바 숨김)에서 기본값(DEFAULT)이면 안드로이드가 세로 화면 위쪽 컷아웃 높이만큼을
+        // 검은 띠로 비워 두어 게임 화면이 아래로 밀렸다. 게임 HTML 은 이미
+        // env(safe-area-inset-top) 으로 상단 버튼을 카메라 아래에 둔다(viewport-fit=cover).
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(lp);
+        }
         applyImmersiveMode();
 
         webView = new WebView(this);
