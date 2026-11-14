@@ -10,8 +10,8 @@ android {
         applicationId 'com.meridian.approach'
         minSdk 26
         targetSdk 35
-        versionCode 29088
-        versionName '0.29.88-app3'
+        versionCode 29092
+        versionName '0.29.92-app4'
     }
 
     // 개인 설치용 고정 서명 키 — 빌드할 때마다 키가 바뀌면 덮어쓰기 설치가 막힌다.
