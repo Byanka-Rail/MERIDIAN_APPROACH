@@ -1,8 +1,8 @@
 {
-  "version": "0.29.89",
-  "build": 29089,
-  "file": "MERIDIAN_APPROACH_v0.29.89.html",
-  "sha256": "bdc13416780978d125ab7c9336ab29f2100e8a591176329e80b4cf8434c07a92",
-  "notes": "MERIDIAN APPROACH v0.29.89",
+  "version": "0.29.90",
+  "build": 29090,
+  "file": "MERIDIAN_APPROACH_v0.29.90.html",
+  "sha256": "acf9ed0404a63e9b9591e1348e39046ef3ccc06d3e75d0b09481380abde5dc02",
+  "notes": "MERIDIAN APPROACH v0.29.90",
   "mandatory": false
 }
